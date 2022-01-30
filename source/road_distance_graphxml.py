@@ -50,29 +50,42 @@ class route(object):
 
     def haversine(self, a, b):
         r = 6371
-        self.s_lat = self.G.nodes[a]['y']
-        self.d_lat = self.G.nodes[b]['y']
-        self.s_lon = self.G.nodes[a]['x']
-        self.d_lon = self.G.nodes[b]['x']
+        s_lat = self.G.nodes[a]['y']
+        d_lat = self.G.nodes[b]['y']
+        s_lon = self.G.nodes[a]['x']
+        d_lon = self.G.nodes[b]['x']
         
-        self.phi1 = np.radians(self.s_lat)
-        self.phi2 = np.radians(self.d_lat)
-        self.delta_phi = np.radians(self.d_lat - self.s_lat)
-        self.delta_lambda = np.radians(self.d_lon - self.s_lon)
+        phi1 = np.radians(s_lat)
+        phi2 = np.radians(d_lat)
+        delta_phi = np.radians(d_lat - s_lat)
+        delta_lambda = np.radians(d_lon - s_lon)
         
-        self.a = np.sin(self.delta_phi / 2)**2 + np.cos(self.phi1) * np.cos(self.phi2) * np.sin(self.delta_lambda / 2)**2
-        self.hav_dist = r * (2 * np.arctan2(np.sqrt(self.a), np.sqrt(1 - self.a)))
-        return np.round(self.hav_dist, 2)
+        a = np.sin(delta_phi / 2)**2 + np.cos(phi1) * np.cos(phi2) * np.sin(delta_lambda / 2)**2
+        self.hav_dist = r * (2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a)))
+        return self.hav_dist
 
     def euclidean(self, a, b):
-        self.s_lat = self.G.nodes[a]['y']
-        self.d_lat = self.G.nodes[b]['y']
-        self.s_lon = self.G.nodes[a]['x']
-        self.d_lon = self.G.nodes[b]['x']
+        s_lat = self.G.nodes[a]['y']
+        d_lat = self.G.nodes[b]['y']
+        s_lon = self.G.nodes[a]['x']
+        d_lon = self.G.nodes[b]['x']
         
-        self.eu_dist = np.sqrt((self.d_lat - self.s_lat)**2 \
-                            + (self.d_lon - self.s_lon)**2)
+        self.eu_dist = np.sqrt((d_lat - s_lat)**2 \
+                            + (d_lon - s_lon)**2)
         return self.eu_dist
+    
+    def manhattan(self, a, b):
+        s_lat = self.G.nodes[a]['y']
+        d_lat = self.G.nodes[b]['y']
+        s_lon = self.G.nodes[a]['x']
+        d_lon = self.G.nodes[b]['x']
+        
+        self.ma_dist = abs(d_lat - s_lat) + abs(d_lon - s_lon)
+            
+        return self.ma_dist
+    
+    def landmark(self, a, b):
+        raise NotImplementedError
 
     def calculate_travel_time(self):
         """Calculate shortest path by travel time 
@@ -89,8 +102,8 @@ class route(object):
                                                     self.destination_node, \
                                                         heuristic=self.euclidean, \
                                                             weight='travel_time')
-            self.hours = self.travel_time//3600
-            if self.hours >= 8:
+            hours = self.travel_time//3600
+            if hours >= 8:
                 #compensating for driver rest time
                 self.travel_time *= 1.375
             print("Estimated time calculated at ave. speed = free flow speed - 20kmph")
@@ -101,10 +114,10 @@ class route(object):
             logging.warning(f"There is no path between the two nodes: {self.origin_node},{self.destination_node}")
             return None
         
-
-start_time = time.time()
-origin_point = (31.37859344, 120.656456)
-destination_point =(31.14340019, 121.8050003)
-route = route(origin_point, destination_point)
-route.calculate_travel_time()
-print("Query time: %s seconds" % round(time.time() - start_time, 2))
+if __name__ == "__main__":
+    start_time = time.time()
+    origin_point = (31.37859344, 120.656456)
+    destination_point =(31.14340019, 121.8050003)
+    route = route(origin_point, destination_point)
+    route.calculate_travel_time()
+    print(f"Query time: {time.strftime('%H:%M:%S', time.gmtime(round(time.time() - start_time, 2)))} seconds")

@@ -27,34 +27,48 @@ class route(object):
         
     def haversine(self, a, b):
         r = 6371
-        self.s_lat = self.G.nodes[a]['y']
-        self.d_lat = self.G.nodes[b]['y']
-        self.s_lon = self.G.nodes[a]['x']
-        self.d_lon = self.G.nodes[b]['x']
+        s_lat = self.G.nodes[a]['y']
+        d_lat = self.G.nodes[b]['y']
+        s_lon = self.G.nodes[a]['x']
+        d_lon = self.G.nodes[b]['x']
         
-        self.phi1 = np.radians(self.s_lat)
-        self.phi2 = np.radians(self.d_lat)
-        self.delta_phi = np.radians(self.d_lat - self.s_lat)
-        self.delta_lambda = np.radians(self.d_lon - self.s_lon)
+        phi1 = np.radians(s_lat)
+        phi2 = np.radians(d_lat)
+        delta_phi = np.radians(d_lat - s_lat)
+        delta_lambda = np.radians(d_lon - s_lon)
         
-        self.a = np.sin(self.delta_phi / 2)**2 + np.cos(self.phi1) * np.cos(self.phi2) * np.sin(self.delta_lambda / 2)**2
-        self.hav_dist = r * (2 * np.arctan2(np.sqrt(self.a), np.sqrt(1 - self.a)))
+        a = np.sin(delta_phi / 2)**2 + np.cos(phi1) * np.cos(phi2) * np.sin(delta_lambda / 2)**2
+        self.hav_dist = r * (2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a)))
         return self.hav_dist
 
     def euclidean(self, a, b):
-        self.s_lat = self.G.nodes[a]['y']
-        self.d_lat = self.G.nodes[b]['y']
-        self.s_lon = self.G.nodes[a]['x']
-        self.d_lon = self.G.nodes[b]['x']
+        s_lat = self.G.nodes[a]['y']
+        d_lat = self.G.nodes[b]['y']
+        s_lon = self.G.nodes[a]['x']
+        d_lon = self.G.nodes[b]['x']
         
-        self.eu_dist = np.sqrt((self.d_lat - self.s_lat)**2 \
-                            + (self.d_lon - self.s_lon)**2)
+        self.eu_dist = np.sqrt((d_lat - s_lat)**2 \
+                            + (d_lon - s_lon)**2)
         return self.eu_dist
+    
+    def manhattan(self, a, b):
+        s_lat = self.G.nodes[a]['y']
+        d_lat = self.G.nodes[b]['y']
+        s_lon = self.G.nodes[a]['x']
+        d_lon = self.G.nodes[b]['x']
+        
+        self.ma_dist = abs(d_lat - s_lat) + abs(d_lon - s_lon)
+            
+        return self.ma_dist
+    
+    def landmark(self, a, b):
+        raise NotImplementedError
 
     def calculate_travel_time(self):
         """Calculate shortest path by travel time 
         Search algorithm: A*
-        Heuristic option: Euclidean distance (default) / Haversine distance
+        Heuristic option: Euclidean distance (default)/Haversine distance\
+            /Manhattan
         
         Haversine is the more accurate approximation for distances given
         GPS and the error between Euclidean-Haversine increases with distance 
@@ -62,11 +76,11 @@ class route(object):
         distances are short"""
         
         if (self.origin_node,self.destination_node) in distance_cache.keys():
-            self.hours = distance_cache[(self.origin_node,self.destination_node)]//3600
-            if self.hours >= 8:
+            hours = distance_cache[(self.origin_node,self.destination_node)]//3600
+            if hours >= 8:
                 #compensating for driver rest time
                 distance_cache[(self.origin_node,self.destination_node)] *= 1.375
-                print(f"Estimated travel time: {time.strftime('%H:%M:%S', time.gmtime(distance_cache[(self.origin_node,self.destination_node)]))}")
+            print(f"Estimated travel time: {time.strftime('%H:%M:%S', time.gmtime(distance_cache[(self.origin_node,self.destination_node)]))}")
             return distance_cache[(self.origin_node,self.destination_node)]
         else:
             try:
@@ -74,8 +88,8 @@ class route(object):
                                                         self.destination_node, \
                                                             heuristic=self.euclidean, \
                                                                 weight='travel_time')
-                self.hours = self.travel_time//3600
-                if self.hours >= 8:
+                hours = self.travel_time//3600
+                if hours >= 8:
                     #compensating for driver rest time
                     self.travel_time *= 1.375
                 print(f"Estimated travel time: {time.strftime('%H:%M:%S', time.gmtime(self.travel_time))}")
@@ -84,10 +98,10 @@ class route(object):
             except nx.NetworkXNoPath:
                 no_paths.add((self.origin_node,self.destination_node))
                 logging.warning(f"There is no path between the two nodes: {self.origin_node},{self.destination_node}. Finding Haversine distance instead!")
-                self.distance = self.haversine(self.origin_node, self.destination_node)
-                self.hours = (self.distance/65)
-                self.travel_time = (self.distance/65)*3600
-                if self.hours >= 8:
+                distance = self.haversine(self.origin_node, self.destination_node)
+                hours = (distance/65)
+                self.travel_time = (distance/65)*3600
+                if hours >= 8:
                     #compensating for driver rest time
                     self.travel_time *= 1.375
                 print(f"Estimated travel time: {time.strftime('%H:%M:%S', time.gmtime(self.travel_time))}")
@@ -99,24 +113,25 @@ def travel_wrapper(G, source, destination):
     travel_time = route_instance.calculate_travel_time()
     return travel_time
 
-start_time = time.time()
-ship_leg_df = pd.read_csv("sample.csv")
-graphml_map = {'KOR':'south_korea_highways.graphml', \
-                                'CN':'china_highways.graphml', \
-                                    'JP': 'japan_highways.graphml', \
-                                       'KR':'south_korea_highways.graphml'}
-country_list = list(set(ship_leg_df['dest_country'].values))
-country_df_list =[]
-print("Estimated time calculated at ave. speed = free flow speed - 20kmph")
-print("Driver rest time factored at 3h of rest every 8h of driving")
-
-for country in country_list:
-    network_file = graphml_map[country]
-    G = ox.load_graphml(network_file)
-    ship_leg_df_filtered = ship_leg_df.loc[ship_leg_df.dest_country == country]
-    ship_leg_df_filtered['travel_time_secs'] = ship_leg_df_filtered.apply(lambda row: travel_wrapper(G, (row['source_lat'],row['source_long']), (row['dest_lat'],row['dest_long'])), axis=1)
-    country_df_list.append(ship_leg_df_filtered)
-   
-leg_df_final = pd.concat(country_df_list, ignore_index=True)
-print(f"Query time: {round(time.time() - start_time, 2)} seconds")
-leg_df_final.to_csv('leg_travel_time.csv', index=False)
+if __name__ == "__main__":
+    start_time = time.time()
+    ship_leg_df = pd.read_csv("sample.csv")
+    graphml_map = {'KOR':'south_korea_highways.graphml', \
+                                    'CN':'china_highways.graphml', \
+                                        'JP': 'japan_highways.graphml', \
+                                           'KR':'south_korea_highways.graphml'}
+    country_list = list(set(ship_leg_df['dest_country'].values))
+    country_df_list =[]
+    print("Estimated time calculated at ave. speed = free flow speed - 20kmph")
+    print("Driver rest time factored at 3h of rest every 8h of driving")
+    
+    for country in country_list:
+        network_file = graphml_map[country]
+        G = ox.load_graphml(network_file)
+        ship_leg_df_filtered = ship_leg_df.loc[ship_leg_df.dest_country == country]
+        ship_leg_df_filtered['travel_time_secs'] = ship_leg_df_filtered.apply(lambda row: travel_wrapper(G, (row['source_lat'],row['source_long']), (row['dest_lat'],row['dest_long'])), axis=1)
+        country_df_list.append(ship_leg_df_filtered)
+       
+    leg_df_final = pd.concat(country_df_list, ignore_index=True)
+    print(f"Query time: {time.strftime('%H:%M:%S', time.gmtime(round(time.time() - start_time, 2)))} seconds")
+    leg_df_final.to_csv('leg_travel_time.csv', index=False)
