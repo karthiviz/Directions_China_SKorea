@@ -19,8 +19,8 @@ def connect_to_endpoint_post(url):
     return response.json()  
     
 def get_country(origin_point, destination_point):
-    o_query = f"https://atlas.microsoft.com/search/address/reverse/json?subscription-key=lF7p98gxrKhd4VHo9afxaCsRpevFxrufI8m-dFbdf8A&api-version=1.0&query={origin_point[0]}, {origin_point[1]}"
-    d_query = f"https://atlas.microsoft.com/search/address/reverse/json?subscription-key=lF7p98gxrKhd4VHo9afxaCsRpevFxrufI8m-dFbdf8A&api-version=1.0&query={destination_point[0]}, {destination_point[1]}"
+    o_query = f"https://atlas.microsoft.com/search/address/reverse/json?subscription-key=key&api-version=1.0&query={origin_point[0]}, {origin_point[1]}"
+    d_query = f"https://atlas.microsoft.com/search/address/reverse/json?subscription-key=key&api-version=1.0&query={destination_point[0]}, {destination_point[1]}"
     o_response = connect_to_endpoint_post(o_query)
     d_response = connect_to_endpoint_post(d_query)
     o_country = o_response['addresses'][0]['address']['countryCode']
