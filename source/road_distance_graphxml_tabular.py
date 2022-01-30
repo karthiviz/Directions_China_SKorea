@@ -100,7 +100,7 @@ class route(object):
                 logging.warning(f"There is no path between the two nodes: {self.origin_node},{self.destination_node}. Finding Haversine distance instead!")
                 distance = self.haversine(self.origin_node, self.destination_node)
                 hours = (distance/65)
-                self.travel_time = (distance/65)*3600
+                self.travel_time = hours*3600
                 if hours >= 8:
                     #compensating for driver rest time
                     self.travel_time *= 1.375
