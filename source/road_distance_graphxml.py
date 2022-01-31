@@ -62,8 +62,9 @@ class route(object):
         
         a = np.sin(delta_phi / 2)**2 + np.cos(phi1) * np.cos(phi2) * np.sin(delta_lambda / 2)**2
         self.hav_dist = r * (2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a)))
-        return self.hav_dist
-
+        # setting heuristic cost to approximate cost to goal node
+        return 5 * np.sqrt(self.hav_dist)
+    
     def euclidean(self, a, b):
         s_lat = self.G.nodes[a]['y']
         d_lat = self.G.nodes[b]['y']
@@ -74,33 +75,19 @@ class route(object):
                             + (d_lon - s_lon)**2)
         return self.eu_dist
     
-    def manhattan(self, a, b):
-        s_lat = self.G.nodes[a]['y']
-        d_lat = self.G.nodes[b]['y']
-        s_lon = self.G.nodes[a]['x']
-        d_lon = self.G.nodes[b]['x']
-        
-        self.ma_dist = abs(d_lat - s_lat) + abs(d_lon - s_lon)
-            
-        return self.ma_dist
-    
     def landmark(self, a, b):
         raise NotImplementedError
 
     def calculate_travel_time(self):
         """Calculate shortest path by travel time 
         Search algorithm: A*
-        Heuristic option: Euclidean distance (default) / Haversine distance
-        
-        Haversine is the more accurate approximation for distances given
-        GPS and the error between Euclidean-Haversine increases with distance 
-        between O-D, but I've chosen Euclidean as the default because expected 
-        distances are short"""
+        Heuristic option: Haversine (default) / Euclidean /Landmark
+        """
         
         try:
             self.travel_time = nx.astar_path_length(self.G, self.origin_node, \
                                                     self.destination_node, \
-                                                        heuristic=self.euclidean, \
+                                                        heuristic=self.haversine, \
                                                             weight='travel_time')
             hours = self.travel_time//3600
             if hours >= 8:
@@ -120,4 +107,4 @@ if __name__ == "__main__":
     destination_point =(31.14340019, 121.8050003)
     route = route(origin_point, destination_point)
     route.calculate_travel_time()
-    print(f"Query time: {time.strftime('%H:%M:%S', time.gmtime(round(time.time() - start_time, 2)))} seconds")
+    print(f"Pathfinding time: {time.strftime('%H:%M:%S', time.gmtime(round(time.time() - start_time, 2)))}")

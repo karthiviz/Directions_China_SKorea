@@ -39,8 +39,9 @@ class route(object):
         
         a = np.sin(delta_phi / 2)**2 + np.cos(phi1) * np.cos(phi2) * np.sin(delta_lambda / 2)**2
         self.hav_dist = r * (2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a)))
-        return self.hav_dist
-
+        # setting heuristic cost to approximate cost to goal node
+        return 5 * np.sqrt(self.hav_dist)
+    
     def euclidean(self, a, b):
         s_lat = self.G.nodes[a]['y']
         d_lat = self.G.nodes[b]['y']
@@ -51,29 +52,14 @@ class route(object):
                             + (d_lon - s_lon)**2)
         return self.eu_dist
     
-    def manhattan(self, a, b):
-        s_lat = self.G.nodes[a]['y']
-        d_lat = self.G.nodes[b]['y']
-        s_lon = self.G.nodes[a]['x']
-        d_lon = self.G.nodes[b]['x']
-        
-        self.ma_dist = abs(d_lat - s_lat) + abs(d_lon - s_lon)
-            
-        return self.ma_dist
-    
     def landmark(self, a, b):
         raise NotImplementedError
 
     def calculate_travel_time(self):
         """Calculate shortest path by travel time 
         Search algorithm: A*
-        Heuristic option: Euclidean distance (default)/Haversine distance\
-            /Manhattan
-        
-        Haversine is the more accurate approximation for distances given
-        GPS and the error between Euclidean-Haversine increases with distance 
-        between O-D, but I've chosen Euclidean as the default because expected 
-        distances are short"""
+        Heuristic option: Haversine (default) / Euclidean /Landmark
+        """
         
         if (self.origin_node,self.destination_node) in distance_cache.keys():
             hours = distance_cache[(self.origin_node,self.destination_node)]//3600
@@ -86,8 +72,13 @@ class route(object):
             try:
                 self.travel_time = nx.astar_path_length(self.G, self.origin_node, \
                                                         self.destination_node, \
-                                                            heuristic=self.euclidean, \
+                                                            heuristic=self.haversine, \
                                                                 weight='travel_time')
+                
+                # self.travel_time = nx.shortest_path_length(self.G, self.origin_node, \
+                #                                         self.destination_node, \
+                #                                             weight='travel_time')    
+                    
                 hours = self.travel_time//3600
                 if hours >= 8:
                     #compensating for driver rest time
@@ -114,7 +105,6 @@ def travel_wrapper(G, source, destination):
     return travel_time
 
 if __name__ == "__main__":
-    start_time = time.time()
     ship_leg_df = pd.read_csv("sample.csv")
     graphml_map = {'KOR':'south_korea_highways.graphml', \
                                     'CN':'china_highways.graphml', \
@@ -125,6 +115,7 @@ if __name__ == "__main__":
     print("Estimated time calculated at ave. speed = free flow speed - 20kmph")
     print("Driver rest time factored at 3h of rest every 8h of driving")
     
+    start_time = time.time()
     for country in country_list:
         network_file = graphml_map[country]
         G = ox.load_graphml(network_file)
@@ -132,6 +123,6 @@ if __name__ == "__main__":
         ship_leg_df_filtered['travel_time_secs'] = ship_leg_df_filtered.apply(lambda row: travel_wrapper(G, (row['source_lat'],row['source_long']), (row['dest_lat'],row['dest_long'])), axis=1)
         country_df_list.append(ship_leg_df_filtered)
        
+    print(f"Pathfinding time: {time.strftime('%H:%M:%S', time.gmtime(round(time.time() - start_time, 2)))}")
     leg_df_final = pd.concat(country_df_list, ignore_index=True)
-    print(f"Query time: {time.strftime('%H:%M:%S', time.gmtime(round(time.time() - start_time, 2)))} seconds")
-    leg_df_final.to_csv('leg_travel_time.csv', index=False)
+    leg_df_final.to_csv('leg_travel_time_astar.csv', index=False)
