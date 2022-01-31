@@ -80,8 +80,8 @@ class route(object):
 
     def calculate_travel_time(self):
         """Calculate shortest path by travel time 
-        Search algorithm: A*
-        Heuristic option: Haversine (default) / Euclidean /Landmark
+        Search algorithm: A* (default) / Bi-directional Dijkstra
+        Heuristic option (A*): Haversine (default) / Euclidean /Landmark
         """
         
         try:
@@ -89,6 +89,11 @@ class route(object):
                                                     self.destination_node, \
                                                         heuristic=self.haversine, \
                                                             weight='travel_time')
+            
+            # self.travel_time = nx.bidirectional_dijkstra(self.G, self.origin_node, \
+            #                                         self.destination_node, \
+            #                                             weight='travel_time')[0]
+                
             hours = self.travel_time//3600
             if hours >= 8:
                 #compensating for driver rest time
@@ -98,8 +103,15 @@ class route(object):
             print(f"Estimated travel time: {time.strftime('%H:%M:%S', time.gmtime(self.travel_time))}")
             return self.travel_time
         except nx.NetworkXNoPath:
-            logging.warning(f"There is no path between the two nodes: {self.origin_node},{self.destination_node}")
-            return None
+            logging.warning(f"There is no path between the two nodes: {self.origin_node},{self.destination_node}. Finding Haversine distance instead!")
+            distance = self.haversine(self.origin_node, self.destination_node)
+            hours = (distance/65)
+            self.travel_time = hours*3600
+            if hours >= 8:
+                #compensating for driver rest time
+                self.travel_time *= 1.375
+            print(f"Estimated travel time: {time.strftime('%H:%M:%S', time.gmtime(self.travel_time))}")
+            return self.travel_time
         
 if __name__ == "__main__":
     start_time = time.time()

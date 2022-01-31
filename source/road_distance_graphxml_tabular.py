@@ -57,8 +57,8 @@ class route(object):
 
     def calculate_travel_time(self):
         """Calculate shortest path by travel time 
-        Search algorithm: A*
-        Heuristic option: Haversine (default) / Euclidean /Landmark
+        Search algorithm: A* (default) / Bi-directional Dijkstra
+        Heuristic options (A*): Haversine (default) / Euclidean /Landmark
         """
         
         if (self.origin_node,self.destination_node) in distance_cache.keys():
@@ -75,9 +75,9 @@ class route(object):
                                                             heuristic=self.haversine, \
                                                                 weight='travel_time')
                 
-                # self.travel_time = nx.shortest_path_length(self.G, self.origin_node, \
+                # self.travel_time = nx.bidirectional_dijkstra(self.G, self.origin_node, \
                 #                                         self.destination_node, \
-                #                                             weight='travel_time')    
+                #                                             weight='travel_time')[0]    
                     
                 hours = self.travel_time//3600
                 if hours >= 8:
@@ -115,14 +115,16 @@ if __name__ == "__main__":
     print("Estimated time calculated at ave. speed = free flow speed - 20kmph")
     print("Driver rest time factored at 3h of rest every 8h of driving")
     
-    start_time = time.time()
+    pathfinding_time = 0
     for country in country_list:
         network_file = graphml_map[country]
         G = ox.load_graphml(network_file)
         ship_leg_df_filtered = ship_leg_df.loc[ship_leg_df.dest_country == country]
+        start_time = time.time()
         ship_leg_df_filtered['travel_time_secs'] = ship_leg_df_filtered.apply(lambda row: travel_wrapper(G, (row['source_lat'],row['source_long']), (row['dest_lat'],row['dest_long'])), axis=1)
+        pathfinding_time += round(time.time() - start_time, 2)
         country_df_list.append(ship_leg_df_filtered)
        
-    print(f"Pathfinding time: {time.strftime('%H:%M:%S', time.gmtime(round(time.time() - start_time, 2)))}")
+    print(f"Pathfinding time: {time.strftime('%H:%M:%S', time.gmtime(pathfinding_time))}")
     leg_df_final = pd.concat(country_df_list, ignore_index=True)
     leg_df_final.to_csv('leg_travel_time_astar.csv', index=False)
