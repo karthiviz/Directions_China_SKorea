@@ -73,7 +73,7 @@ class route(object):
 
     def calculate_travel_time(self, **kwargs):
         """Calculate shortest path by travel time 
-        Search algorithm: A* (default)/Bi-directional Dijkstra
+        Search algorithm: Bi-directional Dijkstra (default) / A*
         Heuristic options (A*): Haversine (default)/Landmark/Euclidean
         """
         
