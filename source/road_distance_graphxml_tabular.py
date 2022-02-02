@@ -46,7 +46,8 @@ class route(object):
         delta_phi = np.radians(d_lat - s_lat)
         delta_lambda = np.radians(d_lon - s_lon)
         
-        a = np.sin(delta_phi / 2)**2 + np.cos(phi1) * np.cos(phi2) * np.sin(delta_lambda / 2)**2
+        a = np.sin(delta_phi / 2)**2 + np.cos(phi1) * np.cos(phi2) \
+            * np.sin(delta_lambda / 2)**2
         self.hav_dist = r * (2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a)))
         # setting heuristic cost to approximate cost to goal node
         return 5 * np.sqrt(self.hav_dist)
@@ -62,11 +63,15 @@ class route(object):
         return self.eu_dist
     
     def landmark(self, a, b):
-        origin_from_landmarks = [self.catch(self.landmarks_from[0],landmark,a) for landmark in self.landmarks_from[0].keys()]
-        destination_from_landmarks = [self.catch(self.landmarks_from[0],landmark,b) for landmark in self.landmarks_from[0].keys()]
+        origin_from_landmarks = [self.catch(self.landmarks_from[0],landmark,a)\
+                                 for landmark in self.landmarks_from[0].keys()]
+        destination_from_landmarks = [self.catch(self.landmarks_from[0],landmark,b)\
+                                      for landmark in self.landmarks_from[0].keys()]
         try:
-            best_landmark = max(origin_from_landmarks[0], key=origin_from_landmarks[0].get)[0]
-            self.origin_to_destination = {(a,b): origin_from_landmarks[0][(best_landmark,a)] - destination_from_landmarks[0][(best_landmark,b)]}
+            best_landmark = max(origin_from_landmarks[0],\
+                                key=origin_from_landmarks[0].get)[0]
+            self.origin_to_destination = {(a,b): origin_from_landmarks[0][(best_landmark,a)]\
+                                          - destination_from_landmarks[0][(best_landmark,b)]}
             return self.origin_to_destination[(a,b)]
         except Exception:
             return self.haversine(a, b)
@@ -78,7 +83,6 @@ class route(object):
         """
         
         if (self.origin_node,self.destination_node) in distance_cache.keys():
-            distance_cache[(self.origin_node,self.destination_node)] *= 1.375
             print(f"Estimated travel time: {time.strftime('%H:%M:%S', time.gmtime(distance_cache[(self.origin_node,self.destination_node)]))}")
             return distance_cache[(self.origin_node,self.destination_node)]
         else:
@@ -86,7 +90,7 @@ class route(object):
                 if (self.algorithm == "astar"):
                     self.travel_time = nx.astar_path_length(self.G, self.origin_node, \
                                                             self.destination_node, \
-                                                                heuristic=self.haversine, \
+                                                                heuristic=self.landmark, \
                                                                     weight='travel_time')
                 
                 elif (self.algorithm == "dijkstra"):
@@ -125,7 +129,7 @@ def keystoint(x):
 if __name__ == "__main__":
     ship_leg_df = pd.read_csv("sample.csv")
     graphml_map = {'KOR':'graphml_files/south_korea_highways_all.graphml', \
-                                    'CN':'graphml_files/china_highways.graphml', \
+                                    'CN':'graphml_files/china_highways_all.graphml', \
                                         'JP': 'graphml_files/japan_highways_all.graphml', \
                                            'KR':'graphml_files/south_korea_highways_all.graphml'}
     landmarks_from_map = {'KOR':'landmark_files/south_korea_landmarks_from.json', \
@@ -147,10 +151,13 @@ if __name__ == "__main__":
         f.close()
         ship_leg_df_filtered = ship_leg_df.loc[ship_leg_df.dest_country == country]
         start_time = time.time()
-        ship_leg_df_filtered['travel_time_secs'] = ship_leg_df_filtered.apply(lambda row: travel_wrapper(G, landmarks_from, (row['source_lat'],row['source_long']), (row['dest_lat'],row['dest_long'])), axis=1)
+        ship_leg_df_filtered['travel_time_secs'] = ship_leg_df_filtered.apply(lambda\
+                                                   row: travel_wrapper(G, landmarks_from,\
+                                                   (row['source_lat'],row['source_long']),\
+                                                   (row['dest_lat'],row['dest_long'])), axis=1)
         pathfinding_time += round(time.time() - start_time, 2)
         country_df_list.append(ship_leg_df_filtered)
        
     print(f"Pathfinding time: {time.strftime('%H:%M:%S', time.gmtime(pathfinding_time))}")
     leg_df_final = pd.concat(country_df_list, ignore_index=True)
-    leg_df_final.to_csv('leg_travel_time_dijsktra.csv', index=False)
+    leg_df_final.to_csv('leg_travel_time_dijkstra.csv', index=False)
