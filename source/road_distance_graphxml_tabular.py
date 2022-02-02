@@ -78,10 +78,7 @@ class route(object):
         """
         
         if (self.origin_node,self.destination_node) in distance_cache.keys():
-            hours = distance_cache[(self.origin_node,self.destination_node)]//3600
-            if hours >= 8:
-                #compensating for driver rest time
-                distance_cache[(self.origin_node,self.destination_node)] *= 1.375
+            distance_cache[(self.origin_node,self.destination_node)] *= 1.375
             print(f"Estimated travel time: {time.strftime('%H:%M:%S', time.gmtime(distance_cache[(self.origin_node,self.destination_node)]))}")
             return distance_cache[(self.origin_node,self.destination_node)]
         else:
@@ -156,4 +153,4 @@ if __name__ == "__main__":
        
     print(f"Pathfinding time: {time.strftime('%H:%M:%S', time.gmtime(pathfinding_time))}")
     leg_df_final = pd.concat(country_df_list, ignore_index=True)
-    leg_df_final.to_csv('leg_travel_time_astar.csv', index=False)
+    leg_df_final.to_csv('leg_travel_time_dijsktra.csv', index=False)
