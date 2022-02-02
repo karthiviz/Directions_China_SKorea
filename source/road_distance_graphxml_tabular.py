@@ -129,7 +129,7 @@ def keystoint(x):
 if __name__ == "__main__":
     ship_leg_df = pd.read_csv("sample.csv")
     graphml_map = {'KOR':'graphml_files/south_korea_highways_all.graphml', \
-                                    'CN':'graphml_files/china_highways_all.graphml', \
+                                    'CN':'graphml_files/china_highways.graphml', \
                                         'JP': 'graphml_files/japan_highways_all.graphml', \
                                            'KR':'graphml_files/south_korea_highways_all.graphml'}
     landmarks_from_map = {'KOR':'landmark_files/south_korea_landmarks_from.json', \
