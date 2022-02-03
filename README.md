@@ -1,2 +1,3 @@
-# Directions_China_SKorea
-files related to the project to get travel time between O-D pairs in China / South Korea
+# Heavy vehicle navigation in China, South Korea and Japan
+Azure Maps and Google Maps APIs currently provide limited functionality around truck routing / directions in some/all of these countries listed. Recently, the team I work with was faced with the challenge of finding alternatives for Azure Maps in these geographies to provide realistic transit times between two coordinates. This project was created using OSM Data available on Geofabrik.de, NetworkX and OSMNx libraries in Python.
+The tool intends to provides the user a few different algorithms to use to find the shortest path between two coordinates, taking the road network into account, along with the expected ave. speed constrained to traffic, rest & break times for drivers.
