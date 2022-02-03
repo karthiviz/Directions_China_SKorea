@@ -70,8 +70,8 @@ class route(object):
         try:
             best_landmark = max(origin_from_landmarks[0],\
                                 key=origin_from_landmarks[0].get)[0]
-            self.origin_to_destination = {(a,b): origin_from_landmarks[0][(best_landmark,a)]\
-                                          - destination_from_landmarks[0][(best_landmark,b)]}
+            self.origin_to_destination = {(a,b): origin_from_landmarks[0][(best_landmark,b)]\
+                                          - destination_from_landmarks[0][(best_landmark,a)]}
             return self.origin_to_destination[(a,b)]
         except Exception:
             return self.haversine(a, b)
@@ -129,13 +129,13 @@ def keystoint(x):
 if __name__ == "__main__":
     ship_leg_df = pd.read_csv("sample.csv")
     graphml_map = {'KOR':'graphml_files/south_korea_highways_all.graphml', \
-                                    'CN':'graphml_files/china_highways.graphml', \
-                                        'JP': 'graphml_files/japan_highways_all.graphml', \
-                                           'KR':'graphml_files/south_korea_highways_all.graphml'}
+                   'CN':'graphml_files/china_highways.graphml', \
+                   'JP': 'graphml_files/japan_highways_all.graphml', \
+                   'KR':'graphml_files/south_korea_highways_all.graphml'}
     landmarks_from_map = {'KOR':'landmark_files/south_korea_landmarks_from.json', \
-                                    'CN':'landmark_files/china_landmarks_from.json', \
-                                        'JP': 'landmark_files/japan_landmarks_from.json', \
-                                           'KR':'landmark_files/south_korea_landmarks_from.json'}
+                          'CN':'landmark_files/china_landmarks_from.json', \
+                          'JP': 'landmark_files/japan_landmarks_from.json', \
+                          'KR':'landmark_files/south_korea_landmarks_from.json'}
     country_list = list(set(ship_leg_df['dest_country'].values))
     country_df_list =[]
     print("Estimated time calculated at ave. speed = free flow speed - 20kmph")
