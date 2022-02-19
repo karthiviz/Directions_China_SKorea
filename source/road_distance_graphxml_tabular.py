@@ -126,7 +126,7 @@ def travel_wrapper(G, L, source, destination):
 def keystoint(x):
         return {int(k): v for k, v in x.items()}
 
-if __name__ == "__main__":
+def main():
     ship_leg_df = pd.read_csv("sample.csv")
     graphml_map = {'KOR':'graphml_files/south_korea_highways_all.graphml', \
                    'CN':'graphml_files/china_highways.graphml', \
@@ -161,3 +161,7 @@ if __name__ == "__main__":
     print(f"Pathfinding time: {time.strftime('%H:%M:%S', time.gmtime(pathfinding_time))}")
     leg_df_final = pd.concat(country_df_list, ignore_index=True)
     leg_df_final.to_csv('leg_travel_time_dijkstra.csv', index=False)
+
+
+if __name__ == "__main__":
+    main()
